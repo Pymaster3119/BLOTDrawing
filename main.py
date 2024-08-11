@@ -17,7 +17,7 @@ plt.show()
 
 #Converting it to a bigger Numpy array
 print(image_array.shape)
-big_array = np.zeros((image_array.shape[0] * 16, image_array.shape[0] * 16, 1))
+big_array = np.zeros((image_array.shape[0] * 16, image_array.shape[1] * 16, 1))
 print(big_array.shape)
 
 def process(minx):
@@ -25,23 +25,29 @@ def process(minx):
     array_slice = np.zeros((10, image_array.shape[0] * 16))
     for x in range(minx, maxx): 
         try:
-            _ = image_array[x]
+            for y in range(image_array.shape[1]):
+                #Get intensity
+                intensity = image_array[x][y].item()/16
+
+                #Draw circle with appropriate radius
+                for i in range(int(-intensity), int(intensity) + 1):
+                    for j in range(int(-intensity), int(intensity) + 1):
+                        if math.sqrt(i**2 + j**2) <= intensity:
+                            array_slice[i][16 * y + j] = 1
         except:
             break
-        for y in range(image_array.shape[1]):
-            #Get intensity
-            intensity = image_array[x][y].item()/16
+        
+    return minx, array_slice
 
-            #Draw circle with appropriate radius
-            for i in range(int(-intensity), int(intensity) + 1):
-                for j in range(int(-intensity), int(intensity) + 1):
-                    if math.sqrt(i**2 + j**2) <= intensity:
-                        array_slice[i][16 * y + j] = 1
-    return array_slice
 
-with Pool() as p:
-    results = p.map(process, range(0, image_array.shape[0], 10))
-    print(results)
+if __name__ == "__main__":
+    with Pool() as p:
+        results = p.map(process, range(0, image_array.shape[0], 10))
+        print(results)
+    print("HERE")
+    for minx, array_slice in results:
+        print(big_array[minx * 16: (minx + 10) * 16, :].shape)
+        big_array[minx * 16: (minx + 10) * 16, :] = array_slice
 
 
 plt.imshow(big_array, cmap='gray')
