@@ -11,20 +11,27 @@ def process(minx):
     image = Image.open('image.png').convert("L")
     image_array = np.array(image)
     maxx = minx + 16
-    array_slice = np.zeros((256, image_array.shape[0] * 16))
+    array_slice = np.zeros((256, image_array.shape[1] * 16))
+
     for x in range(minx, maxx): 
         try:
             for y in range(image_array.shape[1]):
-                #Get intensity
-                intensity = image_array[x][y].item()/16
-                #Draw circle with appropriate radius
-                for i in range(int(-intensity), int(intensity) + 1):
-                    for j in range(int(-intensity), int(intensity) + 1):
-                        if math.sqrt(i**2 + j**2) <= intensity:
-                            array_slice[i * 16][16 * y + j] = 1
+                # Get intensity
+                intensity = image_array[x][y] / 16.0
+                if intensity > 0:  # Ensure intensity is positive
+                    radius = int(intensity)
+                    # Draw circle with appropriate radius
+                    for i in range(-radius, radius + 1):
+                        for j in range(-radius, radius + 1):
+                            if math.sqrt(i ** 2 + j ** 2) <= intensity:
+                                new_x = (x - minx) * 16 + i
+                                new_y = 16 * y + j
+                                # Check if indices are within bounds
+                                if 0 <= new_x < array_slice.shape[0] and 0 <= new_y < array_slice.shape[1]:
+                                    array_slice[new_x][new_y] = 1
         except Exception as e:
-            print(e)
-    print("DONE")
+            print(f"Error at minx={minx}, x={x}, y={y}: {e}")
+    
     return minx, array_slice
 
 global image_array, big_array
@@ -40,13 +47,17 @@ if __name__ == "__main__":
     plt.show()
 
     #Converting it to a bigger Numpy array
-    big_array = np.zeros((0, image_array.shape[1] * 16))
+    big_array = np.zeros((image_array.shape[0] * 16, image_array.shape[1] * 16))
     print(big_array.shape)
     with Pool() as p:
         results = p.map(process, range(0, image_array.shape[0], 16))
     for minx, array_slice in results:
-        big_array = np.append(big_array, array_slice, axis=0)
-        print(big_array.shape)
+        try:
+            print(big_array[minx*16:minx*16+256, :].shape)
+            big_array[minx*16:minx*16+256, :] = array_slice
+            print(big_array.shape)
+        except:
+            pass
 
     plt.imshow(big_array, cmap='gray')
     plt.axis('off')
