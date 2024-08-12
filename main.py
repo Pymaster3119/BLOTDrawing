@@ -40,18 +40,18 @@ def write_codelines(x):
     with open("Blotcode.js", "a") as txt:
         for y in range(big_array.shape[1]):
             if big_array[x][y] == 1:
-                #Find line if applicable - along x axis
-                maxx = 0
-                for i in range(big_array.shape[0]):
+                #Find line if applicable - along y axis
+                maxy = 0
+                for i in range(big_array.shape[1]):
                     try:
-                        if big_array[x + i][y] == 1:
-                            maxx = x + i
-                            big_array[maxx][y] = 0
+                        if big_array[x][y + 1] == 1:
+                            maxy = y + i
+                            big_array[x][maxy] = 0
                         else:
                             break
                     except:
                         break
-                txt.write(f"finalLines.push([[{y}, {x}], [{y}, {maxx}]]);\n")
+                txt.write(f"finalLines.push([[{y}, {x}], [{maxy}, {x}]]);\n")
     return True
 
 global image_array, big_array
