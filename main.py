@@ -11,11 +11,14 @@ def process(minx):
     image = Image.open('image.png').convert("L")
     image_array = np.array(image)
     maxx = minx + 16
-    array_slice = np.zeros((256, image_array.shape[1] * 16))
+    if maxx < image_array.shape[0]:
+        array_slice = np.zeros((256, image_array.shape[1] * 16))
+    else:
+        array_slice = np.zeros(((image_array.shape[0] - minx) * 16, image_array.shape[1] * 16))
 
-    for x in range(minx, maxx): 
+    for x in range(minx, maxx + 1): 
         try:
-            for y in range(image_array.shape[1]):
+            for y in range(image_array.shape[1] + 1):
                 # Get intensity
                 intensity = image_array[x][y] / 16.0
                 radius = int(intensity)
@@ -31,6 +34,22 @@ def process(minx):
             pass
     
     return minx, array_slice
+
+def write_codelines(x):
+        for y in range(big_array.shape[1]):
+            if big_array[x][y] == 1:
+                #Find line if applicable - along x axis
+                maxx = 0
+                for i in range(big_array.shape[0]):
+                    try:
+                        if big_array[x + i][y] == 1:
+                            maxx = x + i
+                            big_array[maxx][y] = 0
+                        else:
+                            break
+                    except:
+                        break
+                txt.write(f"finalLines.push([[{y}, {x}], [{y}, {maxx}]]);\n")
 
 global image_array, big_array
 
@@ -60,19 +79,6 @@ if __name__ == "__main__":
         txt.write("//Produced by Aditya Anand's Blotinator, not human-written\n")
         txt.write(f"setDocDimensions({big_array.shape[0]}, {big_array.shape[1]});\n")
         txt.write("const finalLines = [];\n")
-        for x in tqdm.tqdm(range(big_array.shape[0])):
-            for y in range(big_array.shape[1]):
-                if big_array[x][y] == 1:
-                    #Find line if applicable - along x axis
-                    maxx = 0
-                    for i in range(big_array.shape[0]):
-                        try:
-                            if big_array[x + i][y] == 1:
-                                maxx = x + i
-                                big_array[maxx][y] = 0
-                            else:
-                                break
-                        except:
-                            break
-                    txt.write(f"finalLines.push([[{y}, {x}], [{y}, {maxx}]]);\n")
+        with Pool() as p:
+            results = p.map(write_codelines, range(big_array.shape[0]))
         txt.write("drawLines(finalLines);")
